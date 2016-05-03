@@ -1,0 +1,44 @@
+#!/bin/bash
+# Peter Van Hemert
+# 4/30/16
+# srvCheckert
+# this script accepts a service as a parameter or asks for one after running the script
+# It then checks to see if the service goes down and sends an email alert when it does
+# If the parameter's are empty, execute
+if [ -z "$1" ] && [ -z "$2" ]
+then
+	initialCheck=0
+	# If the user has not specified a service then ask again
+	while [ $initialCheck -eq 0 ]
+	do
+		# Ask the user for a service
+		echo "srvChecker: Enter the name of the service."
+		read service
+		# Search for the service and pull the PID
+		output=$(ps aux | grep -v grep | grep -v srvChecker | grep $service)
+		PID=$(ps aux | grep -v grep | grep -v srvChecker | grep $service | awk '{ print $2 }')
+		# If the service is not running, execute
+		if [ "${#output}" -eq 0 ]
+		then
+			echo "srvChecker: The service $service is currently not running, would you like to continue anyways y/n?"
+			read answer
+			if [ "$answer" = "y" ]
+			then
+				# Continue the script expecting the service to turn on at some point
+				initialCheck=1
+			fi
+		else
+			# The service has been detected, verify by displaying the PID
+			echo "The PID of $service is $PID"
+			initialCheck=1
+		fi
+	done
+	# Ask the user for an email to use
+	echo "srvChecker: Enter the email that you would like to be notified at."
+	read notifyemail
+else
+	# If parameters were provided then assign them to variables and continue
+	service=$1
+	notifyemail=$2
+fi
+execute=$(nohup ./srvListener $service $notifyemail &)

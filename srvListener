@@ -1,0 +1,31 @@
+#!/bin/bash
+# Peter Van Hemert
+# 5/2/16
+# srvListener
+# This script is the script that actually listens for the service given the parameters from
+# the previous script. This script will continuously check to see if the service given goes
+# down. If the service goes down, then the script will send an email every hour until the
+# service goes back up.
+
+service=$1
+notifyemail=$2
+time=0
+echo "Listening for $service..."
+while [ true ]
+do
+	output=$(ps aux | grep -v grep | grep -v srvListener | grep $service)
+	if [ "${#output}" -eq 0 ]
+	then
+		if [ $time -gt 0 ]
+		then
+			sleep 1
+			time=$time-1
+		else
+			date=`date`
+			echo "The $service does not appear to be running right now. $date" | mail -s "$service is not running" notifyemail
+			time=3600
+		fi
+	fi
+	sleep 10
+done
+# End of Script
